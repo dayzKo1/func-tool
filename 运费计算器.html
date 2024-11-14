@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>运费计算器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 8px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>运费计算器</h1>
+        <div class="form-group">
+            <label for="type">货物类型</label>
+            <select id="type">
+                <option value="small">小体积</option>
+                <option value="electronic">电子/含液体</option>
+                <option value="large">大体积</option>
+            </select>
+        </div>
+        <div class="form-group" id="weight-group">
+            <label for="weight">重量 (克)</label>
+            <input type="number" id="weight" placeholder="输入重量">
+        </div>
+        <div id="dimension-group" class="form-group" style="display: none;">
+            <label for="length">长 (厘米)</label>
+            <input type="number" id="length" placeholder="输入长度">
+            <label for="width">宽 (厘米)</label>
+            <input type="number" id="width" placeholder="输入宽度">
+            <label for="height">高 (厘米)</label>
+            <input type="number" id="height" placeholder="输入高度">
+            <label for="large-type">大体积类型</label>
+            <select id="large-type">
+                <option value="normal">普通货物</option>
+                <option value="electronic">电子/含液体</option>
+            </select>
+        </div>
+        <button onclick="calculate()">计算运费</button>
+        <h2 id="result">运费: 0 元</h2>
+        <h3>历史计算记录</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>货物类型</th>
+                    <th>重量 (克)</th>
+                    <th>长 (厘米)</th>
+                    <th>宽 (厘米)</th>
+                    <th>高 (厘米)</th>
+                    <th>运费 (元)</th>
+                </tr>
+            </thead>
+            <tbody id="history"></tbody>
+        </table>
+        <h3>计算规则</h3>
+        <p>小体积: 首重34元（500g），续重5元/500g</p>
+        <p>电子/含液体: 首重40元（500g），续重10元/500g</p>
+        <p>大体积: 体积重量公式为（长x宽x高）/6000</p>
+    </div>
+    <script>
+        document.getElementById('type').addEventListener('change', function () {
+            const type = this.value;
+            if (type === 'large') {
+                document.getElementById('dimension-group').style.display = 'block';
+                document.getElementById('weight-group').style.display = 'none';
+            } else {
+                document.getElementById('dimension-group').style.display = 'none';
+                document.getElementById('weight-group').style.display = 'block';
+            }
+        });
+
+        function calculate() {
+            const type = document.getElementById('type').value;
+            const weight = document.getElementById('weight').value;
+            const length = document.getElementById('length').value;
+            const width = document.getElementById('width').value;
+            const height = document.getElementById('height').value;
+            const largeType = document.getElementById('large-type').value;
+            let cost = 0;
+
+            if (type === 'small') {
+                cost = 34 + Math.ceil((weight - 500) / 500) * 5;
+            } else if (type === 'electronic') {
+                cost = 40 + Math.ceil((weight - 500) / 500) * 10;
+            } else if (type === 'large') {
+                const volumetricWeight = (length * width * height) / 6000;
+
+                if (largeType === 'normal') {
+                    // 体积重量转换成克
+                    const weightInGrams = volumetricWeight * 1000;
+                    // 首重34元（500g），续重5元/500g
+                    cost = 34 + Math.ceil((weightInGrams - 500) / 500) * 5;
+                } else if (largeType === 'electronic') {
+                    // 体积重量转换成克
+                    const weightInGrams = volumetricWeight * 1000;
+                    // 首重40元（500g），续重10元/500g
+                    cost = 40 + Math.ceil((weightInGrams - 500) / 500) * 10;
+                }
+
+            }
+            document.getElementById('result').innerText = '运费: ' + cost + ' 元';
+            addHistory(type, weight, length, width, height, cost);
+        }
+
+        function addHistory(type, weight, length, width, height, cost) {
+            const historyTable = document.getElementById('history');
+            const newRow = historyTable.insertRow();
+
+            const typeCell = newRow.insertCell(0);
+            const weightCell = newRow.insertCell(1);
+            const lengthCell = newRow.insertCell(2);
+            const widthCell = newRow.insertCell(3);
+            const heightCell = newRow.insertCell(4);
+            const costCell = newRow.insertCell(5);
+
+            if (type === 'small') {
+                typeCell.textContent = '小体积';
+            } else if (type === 'electronic') {
+                typeCell.textContent = '电子/含液体';
+            } else if (type === 'large') {
+                typeCell.textContent = '大体积';
+            }
+
+            weightCell.textContent = weight || 'N/A';
+            lengthCell.textContent = length || 'N/A';
+            widthCell.textContent = width || 'N/A';
+            heightCell.textContent = height || 'N/A';
+            costCell.textContent = cost;
+        }
+    </script>
+</body>
+
+</html>
